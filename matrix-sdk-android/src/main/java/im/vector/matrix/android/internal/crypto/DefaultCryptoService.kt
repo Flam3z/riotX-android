@@ -50,6 +50,7 @@ import im.vector.matrix.android.internal.crypto.actions.MegolmSessionDataImporte
 import im.vector.matrix.android.internal.crypto.actions.MessageEncrypter
 import im.vector.matrix.android.internal.crypto.actions.SetDeviceVerificationAction
 import im.vector.matrix.android.internal.crypto.algorithms.IMXEncrypting
+import im.vector.matrix.android.internal.crypto.algorithms.IMXWithHeldExtension
 import im.vector.matrix.android.internal.crypto.algorithms.megolm.MXMegolmEncryptionFactory
 import im.vector.matrix.android.internal.crypto.algorithms.olm.MXOlmEncryptionFactory
 import im.vector.matrix.android.internal.crypto.crosssigning.DefaultCrossSigningService
@@ -63,6 +64,7 @@ import im.vector.matrix.android.internal.crypto.model.MXUsersDevicesMap
 import im.vector.matrix.android.internal.crypto.model.event.EncryptedEventContent
 import im.vector.matrix.android.internal.crypto.model.event.OlmEventContent
 import im.vector.matrix.android.internal.crypto.model.event.RoomKeyContent
+import im.vector.matrix.android.internal.crypto.model.event.RoomKeyWithHeldContent
 import im.vector.matrix.android.internal.crypto.model.event.SecretSendEventContent
 import im.vector.matrix.android.internal.crypto.model.rest.DeviceInfo
 import im.vector.matrix.android.internal.crypto.model.rest.DevicesListResponse
@@ -773,6 +775,9 @@ internal class DefaultCryptoService @Inject constructor(
                     cryptoStore.saveGossipingEvent(event)
                     onSecretSendReceived(event)
                 }
+                EventType.ROOM_KEY_WITHHELD                            -> {
+                    onKeyWithHeldReceived(event)
+                }
                 else                                             -> {
                     // ignore
                 }
@@ -798,6 +803,22 @@ internal class DefaultCryptoService @Inject constructor(
             return
         }
         alg.onRoomKeyEvent(event, keysBackupService)
+    }
+
+
+    private fun onKeyWithHeldReceived(event: Event) {
+        val withHeldContent = event.getClearContent().toModel<RoomKeyWithHeldContent>() ?: return Unit.also {
+            Timber.e("## CRYPTO | Malformed onKeyWithHeldReceived() : missing fields")
+        }
+        Timber.d("## CRYPTO | onKeyWithHeldReceived() received : content <${withHeldContent}>")
+        val alg = roomDecryptorProvider.getOrCreateRoomDecryptor(withHeldContent.roomId, withHeldContent.algorithm)
+        if (alg is IMXWithHeldExtension) {
+            alg.onRoomKeyWithHeldEvent(withHeldContent)
+        } else {
+            Timber.e("## CRYPTO | onKeyWithHeldReceived() : Unable to handle WithHeldContent for ${withHeldContent.algorithm}")
+            return
+        }
+
     }
 
     private fun onSecretSendReceived(event: Event) {
@@ -1161,7 +1182,7 @@ internal class DefaultCryptoService @Inject constructor(
             }
             roomDecryptorProvider
                     .getOrCreateRoomDecryptor(event.roomId, wireContent.algorithm)
-                    ?.requestKeysForEvent(event) ?: run {
+                    ?.requestKeysForEvent(event, false) ?: run {
                 Timber.v("## CRYPTO | requestRoomKeyForEvent() : No room decryptor for roomId:${event.roomId} algorithm:${wireContent.algorithm}")
             }
         }
