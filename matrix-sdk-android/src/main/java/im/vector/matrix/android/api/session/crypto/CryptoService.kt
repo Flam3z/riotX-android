@@ -143,4 +143,7 @@ interface CryptoService {
     fun getIncomingRoomKeyRequests(): List<IncomingRoomKeyRequest>
 
     fun getGossipingEventsTrail(): List<Event>
+
+    //For testing shared session
+    fun getSharedWithInfo(roomId: String?, sessionId: String) : MXUsersDevicesMap<Int>
 }
