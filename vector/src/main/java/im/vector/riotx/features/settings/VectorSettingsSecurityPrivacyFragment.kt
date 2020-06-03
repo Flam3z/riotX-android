@@ -386,7 +386,6 @@ class VectorSettingsSecurityPrivacyFragment @Inject constructor(
 //            }
 //        }
 
-
         sendToUnverifiedDevicesPref.isChecked = session.cryptoService().getGlobalBlacklistUnverifiedDevices()
 
         sendToUnverifiedDevicesPref.onPreferenceClickListener = Preference.OnPreferenceClickListener {
