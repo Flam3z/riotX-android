@@ -7,6 +7,7 @@ Features ✨:
 
 Improvements 🙌:
  - "Add Matrix app" menu is now always visible (#1495)
+ - Improve file download and open in timeline
 
 Bugfix 🐛:
  - Fix dark theme issue on login screen (#1097)
