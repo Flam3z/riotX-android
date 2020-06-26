@@ -145,6 +145,7 @@ internal class DefaultSession @Inject constructor(
     override fun open() {
         assert(!isOpen)
         isOpen = true
+        cryptoService.get().ensureDevice()
         liveEntityObservers.forEach { it.start() }
         eventBus.register(this)
         timelineEventDecryptor.start()

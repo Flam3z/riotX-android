@@ -48,10 +48,7 @@ internal class SyncResponseHandler @Inject constructor(private val monarchy: Mon
         val reporter = initialSyncProgressService.takeIf { isInitialSync }
 
         measureTimeMillis {
-            if (!cryptoService.isStarted()) {
-                Timber.v("Should start cryptoService")
-                cryptoService.start(isInitialSync)
-            }
+            cryptoService.onSyncWillProcess(isInitialSync)
         }.also {
             Timber.v("Finish handling start cryptoService in $it ms")
         }
